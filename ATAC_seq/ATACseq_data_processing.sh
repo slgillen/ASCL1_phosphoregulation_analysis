@@ -6,7 +6,6 @@
 maindir=$1
 indexdir=$2 
 samplefile=$3
-tempoutdir=$4 
 indir=$maindir/raw_fastq 
 
 #########  read in sample names from sample file  ########
@@ -167,3 +166,31 @@ do
   bamCoverage -b $filtdir/${s}_filt_sorted.bam -o $bwdir/${s}_RPGC.bw --binSize 10 --normalizeUsing RPGC --effectiveGenomeSize 2728223909 --extendReads &
 done
 wait
+
+
+########## peak calling ##########
+regiondir=$maindir/regions
+mkdir $regiondir
+
+get the NFRs
+for s in ${samplenames[@]}
+do
+  sambamba view -h -t 24 -f bam -F "((template_length > 0 and template_length < 135) or (template_length < 0 and template_length > -135))" $filtdir/${s}_filt.bam > $regiondir/NFR_${s}_sorted.bam
+done
+wait
+
+for s in ${samplenames[@]}
+do
+  samtools index $regiondir/NFR_${s}_sorted.bam $regiondir/NFR_${s}_sorted.bai 
+done
+wait
+
+peakdir=$maindir/peak_calling
+mkdir $peakdir
+
+for s in ${samplenames[@]}
+do
+  macs2 callpeak -t $regiondir/NFR_${s}_sorted.bam -g 2.72e9 -f BAMPE --keep-dup all --outdir $peakdir -n NFR_${s} -B 2> $peakdir/NFR_${s}_macs2.log &
+done
+wait
+
