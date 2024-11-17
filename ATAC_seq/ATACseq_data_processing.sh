@@ -158,5 +158,12 @@ done
 wait
 
 
+########  bam to bigwig  ########
+bwdir=$maindir/bigwig
+mkdir $bwdir
 
-
+for s in ${samplenames[@]}
+do
+  bamCoverage -b $filtdir/${s}_filt_sorted.bam -o $bwdir/${s}_RPGC.bw --binSize 10 --normalizeUsing RPGC --effectiveGenomeSize 2728223909 --extendReads &
+done
+wait
